@@ -1,0 +1,113 @@
+---
+## simple playbook to reboot antminer when it is too hot and not mining
+## tested on antminer s9k
+## run without tags to check status and display if the playbook would have reboot device
+## run with "--tags report" to report/print antminer status and kernel log
+## run with "--tags status" to report/print antminer status
+## run with "--tags kernel" to report/print antminer kernel log
+## run with "--tags reboot_when_hot" to reboot device during playbook run
+## antminer checks the temperature every 30 minutes, so a cron running every 30 mins is sufficient
+##[user@lab ~]# crontab -l
+##30,0 * * * * /usr/bin/ansible-playbook --tags reboot_when_hot /home/user/check-miner.yml
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  vars:
+    baseurl: http://1.2.3.4
+    statusurl: cgi-bin/miner_summary.cgi
+    kernelurl: cgi-bin/get_kernel_log.cgi
+    rebooturl: cgi-bin/reboot.cgi
+    # default passwords for antminer
+    mineruser: root
+    minerpass: root
+  tasks:
+    - name: block for miner check
+      block:
+        - name: check antminer status
+          uri:
+            url: "{{ baseurl }}/{{ statusurl }}"
+            user: "{{ mineruser }}"
+            password: "{{ minerpass }}"
+            return_content: yes
+          register: minerstatus
+          tags:
+            - report
+            - reboot_when_hot
+            - status
+
+        - name: transform status
+          set_fact:
+            hash: "{{ minerstatus.content | from_json }}"
+          tags:
+            - report
+            - reboot_when_hot
+            - status
+
+        - name: grab ghs rate
+          set_fact:
+            ghsav: "{{ hash.SUMMARY[0]['GHS av'] | float }}"
+          tags:
+            - reboot_when_hot
+
+        - name: dump minerstatus info
+          debug:
+            var: hash
+          tags:
+            - never
+            - report
+            - status
+
+        - name: report hash rate (ghs) average
+          debug:
+            var: ghsav
+          tags:
+            - reboot_when_hot
+
+        - name: Get Miner Kernel Log
+          uri:
+            url: "{{ baseurl }}/{{ kernelurl }}"
+            user: "{{ mineruser }}"
+            password: "{{ minerpass }}"
+            return_content: yes
+          register: minerkernel
+          tags:
+            - report
+            - reboot_when_hot
+            - kernel
+
+        - name: dump kernel log
+          debug:
+            var: minerkernel
+          tags:
+            - never
+            - report
+            - kernel
+
+        - name: reboot miner if temperature too high and ghs is zero
+          debug:
+            msg: "would reboot here if playbook ran with --tags reboot_when_hot"
+          when: 
+            - "'Temperature is too high' in minerkernel.content"
+            - ghsav == "0.0"
+          tags:
+            - reboot_when_hot
+
+        - name: Rebooting miner
+          uri:
+            url: "{{ baseurl }}/{{ rebooturl }}"
+            user: "{{ mineruser }}"
+            password: "{{ minerpass }}"
+          when: 
+            - "'Temperature is too high' in minerkernel.content"
+            - ghsav == "0.0"
+          tags:
+            - never
+            - reboot_when_hot
+      rescue:
+        - name: "error: minerstatus"
+          debug:
+            var: minerstatus.content | default('None',True) | from_json
+
+        - name: "error: minerstatus"
+          debug:
+            var: minerkernel.content | default('None',True)
