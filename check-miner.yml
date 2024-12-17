@@ -43,9 +43,15 @@
             - reboot_when_hot
             - status
 
-        - name: grab ghs rate
+        - name: grab ghs rate avg
           set_fact:
             ghsav: "{{ hash.SUMMARY[0]['GHS av'] | float }}"
+          tags:
+            - reboot_when_hot
+
+        - name: grab ghs rate last 5s
+          set_fact:
+            ghs5s: "{{ hash.SUMMARY[0]['GHS 5s'] | float }}"
           tags:
             - reboot_when_hot
 
@@ -60,6 +66,12 @@
         - name: report hash rate (ghs) average
           debug:
             var: ghsav
+          tags:
+            - reboot_when_hot
+
+        - name: report hash rate (ghs) last 5s
+          debug:
+            var: ghs5s
           tags:
             - reboot_when_hot
 
@@ -86,9 +98,18 @@
         - name: reboot miner if temperature too high and ghs is zero
           debug:
             msg: "would reboot here if playbook ran with --tags reboot_when_hot"
-          when: 
+          when:
             - "'Temperature is too high' in minerkernel.content"
             - ghsav == "0.0"
+          tags:
+            - reboot_when_hot
+
+        - name: reboot miner if hardware failure
+          debug:
+            msg: "hardware failure. would reboot here if playbook ran with --tags reboot_when_hot"
+          when:
+            - "'ERROR! failed on Chain' in minerkernel.content"
+            - ghs5s == "0.0"
           tags:
             - reboot_when_hot
 
@@ -97,12 +118,25 @@
             url: "{{ baseurl }}/{{ rebooturl }}"
             user: "{{ mineruser }}"
             password: "{{ minerpass }}"
-          when: 
+          when:
             - "'Temperature is too high' in minerkernel.content"
             - ghsav == "0.0"
           tags:
             - never
             - reboot_when_hot
+
+        - name: Rebooting miner due to hardware failure
+          uri:
+            url: "{{ baseurl }}/{{ rebooturl }}"
+            user: "{{ mineruser }}"
+            password: "{{ minerpass }}"
+          when:
+            - "'ERROR! failed on Chain' in minerkernel.content"
+            - ghs5s == "0.0"
+          tags:
+            - never
+            - reboot_when_hot
+
       rescue:
         - name: "error: minerstatus"
           debug:
