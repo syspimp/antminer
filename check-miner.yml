@@ -13,7 +13,9 @@
   connection: local
   gather_facts: no
   vars:
-    baseurl: http://1.2.3.4
+    # update with extra variables
+    remoteminer: 1.2.3.4
+    baseurl: "http://{{ remoteminer }}"
     statusurl: cgi-bin/miner_summary.cgi
     kernelurl: cgi-bin/get_kernel_log.cgi
     rebooturl: cgi-bin/reboot.cgi
