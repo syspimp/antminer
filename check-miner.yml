@@ -98,6 +98,32 @@
             - kernel
 
         - name: reboot miner if temperature too high and ghs is zero
+          assert:
+            that:
+              - "'Temperature is too high' in minerkernel.content"
+              - ghsav == "0.0"
+            fail_msg: "Temperature is too high and it is not mining"
+            success_msg: "Temmperature is normal"
+          changed_when: True
+          notify: "reboot miner"
+          tags:
+            - never
+            - reboot_when_hot
+
+        - name: reboot miner if hardware failure
+          assert:
+            that:
+              - "'ERROR! failed on Chain' in minerkernel.content"
+              - ghs5s == "0.0"
+            fail_msg: "Hardware failure and it is not mining"
+            success_msg: "Hardware is normal"
+          changed_when: True
+          notify: "reboot miner"
+          tags:
+            - never
+            - reboot_when_hot
+
+        - name: reboot miner if temperature too high and ghs is zero
           debug:
             msg: "would reboot here if playbook ran with --tags reboot_when_hot"
           when:
@@ -115,29 +141,29 @@
           tags:
             - reboot_when_hot
 
-        - name: Rebooting miner
-          uri:
-            url: "{{ baseurl }}/{{ rebooturl }}"
-            user: "{{ mineruser }}"
-            password: "{{ minerpass }}"
-          when:
-            - "'Temperature is too high' in minerkernel.content"
-            - ghsav == "0.0"
-          tags:
-            - never
-            - reboot_when_hot
-
-        - name: Rebooting miner due to hardware failure
-          uri:
-            url: "{{ baseurl }}/{{ rebooturl }}"
-            user: "{{ mineruser }}"
-            password: "{{ minerpass }}"
-          when:
-            - "'ERROR! failed on Chain' in minerkernel.content"
-            - ghs5s == "0.0"
-          tags:
-            - never
-            - reboot_when_hot
+#        - name: Rebooting miner
+#          uri:
+#            url: "{{ baseurl }}/{{ rebooturl }}"
+#            user: "{{ mineruser }}"
+#            password: "{{ minerpass }}"
+#          when:
+#            - "'Temperature is too high' in minerkernel.content"
+#            - ghsav == "0.0"
+#          tags:
+#            - never
+#            - reboot_when_hot
+#
+#        - name: Rebooting miner due to hardware failure
+#          uri:
+#            url: "{{ baseurl }}/{{ rebooturl }}"
+#            user: "{{ mineruser }}"
+#            password: "{{ minerpass }}"
+#          when:
+#            - "'ERROR! failed on Chain' in minerkernel.content"
+#            - ghs5s == "0.0"
+#          tags:
+#            - never
+#            - reboot_when_hot
 
       rescue:
         - name: "error: minerstatus"
@@ -147,3 +173,11 @@
         - name: "error: minerstatus"
           debug:
             var: minerkernel.content | default('None',True)
+
+  handlers:
+        - name: Rebooting miner
+          uri:
+            url: "{{ baseurl }}/{{ rebooturl }}"
+            user: "{{ mineruser }}"
+            password: "{{ minerpass }}"
+          listen: "reboot miner"
