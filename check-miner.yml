@@ -100,11 +100,11 @@
         - name: reboot miner if temperature too high and ghs is zero
           assert:
             that:
-              - "'Temperature is too high' in minerkernel.content"
-              - ghsav == "0.0"
+              - "'Temperature is too high' not in minerkernel.content"
+              - ghsav != "0.0"
             fail_msg: "Temperature is too high and it is not mining"
             success_msg: "Temmperature is normal"
-          changed_when: True
+          changed_when: false
           notify: "reboot miner"
           tags:
             - never
@@ -113,11 +113,11 @@
         - name: reboot miner if hardware failure
           assert:
             that:
-              - "'ERROR! failed on Chain' in minerkernel.content"
-              - ghs5s == "0.0"
+              - "'ERROR! failed on Chain' not in minerkernel.content"
+              - ghs5s != "0.0"
             fail_msg: "Hardware failure and it is not mining"
             success_msg: "Hardware is normal"
-          changed_when: True
+          changed_when: false
           notify: "reboot miner"
           tags:
             - never
