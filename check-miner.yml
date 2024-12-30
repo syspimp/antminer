@@ -167,7 +167,8 @@
         - name: Sending notification
           uri:
             url: "https://maker.ifttt.com/trigger/{{ ifttt_event }}/with/key/{{ ifttt_key }}"
-            body_format: json
+            headers:
+              Content-Type: application/json
             body:
                 value1: "Rebooting miner"
                 value2: "probably hardware failure"
