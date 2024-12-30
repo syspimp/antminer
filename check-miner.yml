@@ -106,6 +106,7 @@
             - "'Temperature is too high' in minerkernel.content"
             - ghsav == "0.0"
           notify: "reboot miner"
+          changed_when: false
           tags:
             - never
             - reboot_when_hot
@@ -117,6 +118,7 @@
             - "'ERROR! failed on Chain' in minerkernel.content"
             - ghs5s == "0.0"
           notify: "reboot miner"
+          changed_when: false
           tags:
             - never
             - reboot_when_hot
