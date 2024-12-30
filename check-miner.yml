@@ -22,6 +22,8 @@
     # default passwords for antminer
     mineruser: root
     minerpass: root
+    ifttt_event: from_ansible
+    ifttt_key: 123
   tasks:
     - name: block for miner check
       block:
@@ -158,4 +160,13 @@
             url: "{{ baseurl }}/{{ rebooturl }}"
             user: "{{ mineruser }}"
             password: "{{ minerpass }}"
+          listen: "reboot miner"
+
+        - name: Sending notification
+          uri:
+            url: "https://maker.ifttt.com/trigger/{{ ifttt_event }}/with/key/{{ ifttt_key }}"
+            body_format: json
+            body:
+                value1: "Rebooting miner"
+                value2: "probably hardware failure"
           listen: "reboot miner"
