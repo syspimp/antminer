@@ -115,7 +115,7 @@
           debug:
             msg: "hardware failure. would reboot here if playbook ran with --tags reboot_when_hot"
           when:
-            - "'ERROR! failed on Chain' in minerkernel.content"
+            - "'ERROR! failed on Chain' in minerkernel.content or 're_open_core start!PWM 32' in minerkernel.content"
             - ghs5s == "0.0"
           notify: "reboot miner"
           changed_when: true
