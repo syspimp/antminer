@@ -172,5 +172,5 @@
               Content-Type: application/json
             body:
               value1: "Rebooting miner"
-              value2: "probably hardware failure"
+              #value2: "probably hardware failure"
           listen: "reboot miner"
