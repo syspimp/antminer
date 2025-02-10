@@ -165,6 +165,7 @@
           listen: "reboot miner"
 
         - name: Sending notification
+          ignore_errors: yes
           uri:
             url: "https://maker.ifttt.com/trigger/{{ ifttt_event }}/with/key/{{ ifttt_key }}"
             body_format: json
